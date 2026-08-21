@@ -84,7 +84,7 @@
         <button id="createBtn" class="primary">🚀 Buat QRIS</button>
         <div id="statusBox" class="status"></div>
         <div id="loader" class="loader"></div>
-        <div class="mini">Metode otomatis: <b>QRIS</b></div>
+        <div class="mini">Metode otomatis: <b>QRISFAST</b></div>
       </div>
 
       <div class="card qrbox">
@@ -109,10 +109,9 @@
   </main>
 
 <script>
-  // Catatan: API key di frontend dapat dilihat pengguna melalui DevTools.
-  // Untuk produksi, sebaiknya request API dipindahkan ke backend/proxy milik Anda.
-  const API_BASE = 'https://xs-pedia.my.id/h2h';
-  const API_KEY = 'Ryuu_TopUpqgypptaqywttpp7l';
+  // API key disimpan aman di Vercel Environment Variable.
+  // Frontend hanya memanggil backend internal /api/deposit.
+  const API_BASE = '/api/deposit';
 
   const nominalInput = document.getElementById('nominal');
   const createBtn = document.getElementById('createBtn');
@@ -149,14 +148,11 @@
     statusBox.textContent = '';
   }
 
-  async function api(path, params={}){
-    const qs = new URLSearchParams(params).toString();
-    const res = await fetch(`${API_BASE}${path}?${qs}`, {
+  async function api(action, params={}){
+    const qs = new URLSearchParams({action, ...params}).toString();
+    const res = await fetch(`${API_BASE}?${qs}`, {
       method:'GET',
-      headers:{
-        'X-APIKEY':API_KEY,
-        'Content-Type':'application/json'
-      }
+      headers:{'Accept':'application/json'}
     });
     let data;
     try{ data = await res.json(); }catch{ throw new Error('Respons API bukan JSON.'); }
@@ -204,7 +200,7 @@
     setLoading(true);
 
     try{
-      const result = await api('/deposit/create', { nominal:String(Math.round(nominal)), metode:'QRIS' });
+      const result = await api('create', { nominal:String(Math.round(nominal)), metode:'QRISFAST' });
       if(!result.success) throw new Error(result.message || 'Gagal membuat transaksi.');
       renderTransaction(result);
       startPolling();
@@ -218,7 +214,7 @@
   async function checkStatus(silent=false){
     if(!currentTrxId) return;
     try{
-      const result = await api('/deposit/status', {id:currentTrxId});
+      const result = await api('status', {id:currentTrxId});
       if(!result.success) throw new Error(result.message || 'Gagal mengecek status.');
       const d = result.data || {};
       document.getElementById('trxStatus').textContent = d.status || '-';
@@ -252,7 +248,7 @@
     if(!confirm('Yakin ingin membatalkan transaksi ini?')) return;
     cancelBtn.disabled=true;
     try{
-      const result = await api('/deposit/cancel', {id:currentTrxId});
+      const result = await api('cancel', {id:currentTrxId});
       if(result.status !== 'success') throw new Error(result.message || 'Gagal membatalkan transaksi.');
       if(pollTimer) clearInterval(pollTimer);
       document.getElementById('trxStatus').textContent = result.data?.new_status || 'CANCELLED';
