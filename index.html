@@ -16,7 +16,6 @@
       --paper:#fffdf8;
       --green:#22c55e;
       --red:#ef4444;
-      --orange:#f59e0b;
       --shadow:7px 7px 0 var(--ink);
     }
 
@@ -93,7 +92,6 @@
       position:absolute; top:-15px; right:-10px; background:var(--pink);
       border:3px solid var(--ink); border-radius:12px; padding:6px 11px;
       font-weight:900; transform:rotate(6deg); box-shadow:3px 3px 0 var(--ink);
-      z-index:2;
     }
 
     .summary{display:grid;gap:12px}
@@ -114,7 +112,7 @@
       border:3px solid var(--ink);border-radius:14px;padding:11px;
       font-weight:900;background:#fef3c7;margin-bottom:15px;
     }
-    .dot{width:13px;height:13px;border-radius:50%;background:var(--orange);border:2px solid var(--ink)}
+    .dot{width:13px;height:13px;border-radius:50%;background:#f59e0b;border:2px solid var(--ink)}
     .status.success{background:#dcfce7}.status.success .dot{background:var(--green)}
     .status.failed{background:#fee2e2}.status.failed .dot{background:var(--red)}
 
@@ -131,7 +129,7 @@
       position:fixed;left:50%;bottom:22px;transform:translate(-50%,120px);
       background:var(--ink);color:#fff;padding:13px 18px;border-radius:14px;
       border:3px solid #fff;box-shadow:5px 5px 0 var(--purple);
-      font-weight:800;transition:.25s;z-index:10;max-width:90%;text-align:center;
+      font-weight:800;transition:.25s;z-index:10;max-width:90%;
     }
     .toast.show{transform:translate(-50%,0)}
 
@@ -139,17 +137,6 @@
       font-family:"Baloo 2",cursive;font-size:25px;font-weight:900;
       margin:0 0 15px;
     }
-
-    .countdown{
-      margin-top:12px;
-      display:inline-block;
-      background:#fff7ed;
-      border:3px solid var(--ink);
-      border-radius:12px;
-      padding:7px 11px;
-      font-weight:900;
-    }
-
     .footer{text-align:center;font-size:12px;font-weight:800;opacity:.55;margin-top:30px}
 
     @media(max-width:720px){
@@ -165,14 +152,14 @@
 
 <main class="wrap">
   <section class="hero">
-    <span class="badge">⚡ QRIS FAST PAYMENT</span>
+    <span class="badge">⚡ FAST PAYMENT</span>
     <h1>Bayar QRIS!</h1>
-    <p>Masukkan nominal → buat QRIS → scan → status dicek otomatis.</p>
+    <p>Masukkan nominal → buat QRIS → scan → tunggu otomatis terverifikasi.</p>
   </section>
 
   <section class="card">
     <h2 class="comic">💸 Mau bayar berapa?</h2>
-    <label for="nominal">Nominal produk (Rp)</label>
+    <label for="nominal">Nominal pembayaran (Rp)</label>
     <div class="input-row">
       <input id="nominal" type="number" min="1" step="1" placeholder="Contoh: 25000" />
       <button id="createBtn" onclick="createPayment()">Buat QRIS 🚀</button>
@@ -183,86 +170,54 @@
     <div class="payment-grid">
       <div class="qr-box">
         <span class="sticker">SCAN ME!</span>
-
         <div id="status" class="status">
           <span class="dot"></span>
           <span id="statusText">Menunggu pembayaran...</span>
         </div>
-
         <img id="qrImage" alt="QRIS Pembayaran" />
-
-        <div class="countdown">
-          ⏰ Sisa waktu: <span id="countdown">15:00</span>
-        </div>
-
-        <p style="font-weight:900;margin-bottom:0">
-          Scan QRIS dengan aplikasi pembayaran kamu.
-        </p>
+        <p style="font-weight:900;margin-bottom:0">Scan QRIS dengan aplikasi pembayaran kamu.</p>
       </div>
 
       <div class="summary">
         <h2 class="comic">🧾 Detail transaksi</h2>
-
-        <div class="line">
-          <span>ID Transaksi</span>
-          <span id="trxId" class="value">-</span>
-        </div>
-
-        <div class="line">
-          <span>Nominal Produk</span>
-          <span id="nominalView" class="value">-</span>
-        </div>
-
-        <div class="line">
-          <span>Fee/Admin</span>
-          <span id="feeView" class="value">-</span>
-        </div>
-
-        <div class="line total">
-          <span>Total Bayar</span>
-          <span id="totalView" class="value">-</span>
-        </div>
-
-        <div class="line">
-          <span>Saldo Diterima</span>
-          <span id="balanceView" class="value">-</span>
-        </div>
-
-        <div class="line">
-          <span>Status API</span>
-          <span id="apiStatusView" class="value">pending</span>
-        </div>
+        <div class="line"><span>ID Transaksi</span><span id="trxId" class="value">-</span></div>
+        <div class="line"><span>Nominal</span><span id="nominalView" class="value">-</span></div>
+        <div class="line"><span>Biaya Admin</span><span id="feeView" class="value">-</span></div>
+        <div class="line total"><span>Yang Dibayar</span><span id="totalView" class="value">-</span></div>
+        <div class="line"><span>Saldo Diterima</span><span id="balanceView" class="value">-</span></div>
 
         <div class="note">
-          ℹ️ Create memakai endpoint XS-PEDIA <b>deposit/create</b> dengan
-          <b>metode=QRIS</b>. Pemeriksaan pembayaran memakai
-          <b>deposit/status?id=...</b>. Nilai QR dan transaksi mengikuti
-          response API.
+          ℹ️ Nilai <b>Yang Dibayar</b> dihitung dari nominal + fee sesuai
+          respons API. Saldo diterima mengikuti <b>get_balance</b> dari API.
         </div>
 
         <div class="actions">
-          <button class="secondary" onclick="checkStatus(true)">🔄 Cek Status</button>
+          <button class="secondary" onclick="checkStatus()">🔄 Cek Status</button>
           <button class="danger" onclick="cancelPayment()">✕ Batalkan</button>
         </div>
       </div>
     </div>
   </section>
 
-  <div class="footer">Smooth Comic Payment UI • XS-PEDIA QRIS</div>
+  <div class="footer">Smooth Comic Payment UI • QRISFAST</div>
 </main>
 
 <div id="toast" class="toast"></div>
 
 <script>
-  // API key sengaja ditanam langsung sesuai permintaan.
+  /*
+   * PENTING:
+   * Jangan taruh API key produksi di HTML frontend karena siapa pun bisa
+   * melihatnya melalui DevTools. Gunakan backend/proxy untuk menyimpan key.
+   *
+   * Untuk testing lokal saja, isi API_KEY di bawah.
+   */
   const API_KEY = "Ryuu_TopUpqgypptaqywttpp7l";
+
   const API_BASE = "https://xs-pedia.my.id/h2h/deposit";
 
   let currentTransactionId = null;
   let pollTimer = null;
-  let countdownTimer = null;
-  let expiredAt = 0;
-  let isProcessing = false;
 
   const rupiah = (n) =>
     new Intl.NumberFormat("id-ID", {
@@ -276,7 +231,7 @@
     el.textContent = message;
     el.classList.add("show");
     clearTimeout(showToast.timer);
-    showToast.timer = setTimeout(() => el.classList.remove("show"), 3200);
+    showToast.timer = setTimeout(() => el.classList.remove("show"), 3000);
   }
 
   function setStatus(type, text) {
@@ -285,329 +240,148 @@
     document.getElementById("statusText").textContent = text;
   }
 
-  function updateApiStatus(status) {
-    document.getElementById("apiStatusView").textContent = status || "-";
+  function validateApiKey() {
+    if (!API_KEY || API_KEY.startsWith("GANTI_")) {
+      showToast("API key belum dikonfigurasi.");
+      return false;
+    }
+    return true;
   }
 
   async function apiGet(path, params) {
     const qs = new URLSearchParams(params);
-
-    // Mengikuti pola API pada case buyqris:
-    // api key dikirim lewat query dan header.
-    const url = `${API_BASE}/${path}?${qs.toString()}&apikey=${encodeURIComponent(API_KEY)}`;
-
-    const response = await fetch(url, {
+    const response = await fetch(`${API_BASE}/${path}?${qs}`, {
       method: "GET",
       headers: {
         "X-APIKEY": API_KEY,
-        "Accept": "application/json",
         "Content-Type": "application/json"
       }
     });
 
-    const raw = await response.text();
+    const data = await response.json();
 
-    let data;
-    try {
-      data = JSON.parse(raw);
-    } catch {
-      throw new Error("Response XS-PEDIA tidak valid.");
-    }
-
-    if (!response.ok) {
-      throw new Error(data?.message || `HTTP ${response.status}`);
-    }
-
-    if (data?.success === false) {
-      throw new Error(data?.message || "Request XS-PEDIA gagal.");
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || "Request API gagal.");
     }
 
     return data;
   }
 
-  function startCountdown() {
-    clearInterval(countdownTimer);
-
-    const el = document.getElementById("countdown");
-
-    function render() {
-      const remaining = Math.max(0, expiredAt - Date.now());
-      const totalSeconds = Math.floor(remaining / 1000);
-
-      const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
-      const seconds = String(totalSeconds % 60).padStart(2, "0");
-
-      el.textContent = `${minutes}:${seconds}`;
-
-      if (remaining <= 0) {
-        clearInterval(countdownTimer);
-        checkFinalStatusOnExpired();
-      }
-    }
-
-    render();
-    countdownTimer = setInterval(render, 1000);
-  }
-
   async function createPayment() {
-    const nominalInput = document.getElementById("nominal");
-    const btn = document.getElementById("createBtn");
+    if (!validateApiKey()) return;
 
-    const nominal = Number(nominalInput.value);
-
+    const nominal = Number(document.getElementById("nominal").value);
     if (!Number.isFinite(nominal) || nominal <= 0) {
       showToast("Masukkan nominal yang benar.");
       return;
     }
 
-    if (isProcessing) return;
-
-    isProcessing = true;
+    const btn = document.getElementById("createBtn");
     btn.disabled = true;
     btn.innerHTML = '<span class="loader"></span>';
 
     try {
       clearInterval(pollTimer);
-      clearInterval(countdownTimer);
-      currentTransactionId = null;
 
-      // Sesuai case buyqris:
-      // create?nominal=harga&metode=QRIS&apikey=...
       const result = await apiGet("create", {
         nominal: String(Math.round(nominal)),
-        metode: "QRIS"
+        metode: "QRISFAST"
       });
 
-      console.log("[QRIS CREATE]", result);
+      const d = result.data || {};
 
-      if (!result?.success) {
-        throw new Error(result?.message || "Gagal membuat QRIS.");
-      }
-
-      const d = result?.data;
-
-      if (!d) {
-        throw new Error("Data QRIS XS-PEDIA tidak ditemukan.");
-      }
-
-      const xiaoId = d.id || d.iddepo;
-      const qrUrl = d.qr_image || d.qr_image_url;
-
-      if (!xiaoId) {
-        throw new Error("ID transaksi XS-PEDIA tidak ditemukan.");
-      }
-
-      if (!qrUrl) {
-        throw new Error("QRIS image tidak tersedia dari response API.");
-      }
-
-      currentTransactionId = xiaoId;
-
-      // Pada API yang kamu kirim:
-      // nominal = nominal transaksi
-      // fee = biaya
-      // get_balance = saldo bersih yang diterima
-      const nominalApi = Number(d.nominal ?? nominal);
-      const fee = Number(d.fee ?? 0);
-      const totalBayar = nominalApi + fee;
-      const getBalance = Number(
-        d.get_balance ?? Math.max(0, totalBayar - fee)
-      );
+      currentTransactionId = d.id;
 
       document.getElementById("paymentCard").classList.remove("hidden");
-      document.getElementById("qrImage").src = qrUrl;
-      document.getElementById("trxId").textContent = xiaoId;
-      document.getElementById("nominalView").textContent = rupiah(nominalApi);
-      document.getElementById("feeView").textContent = rupiah(fee);
-      document.getElementById("totalView").textContent = rupiah(totalBayar);
-      document.getElementById("balanceView").textContent = rupiah(getBalance);
+      document.getElementById("qrImage").src = d.qr_image || "";
+      document.getElementById("trxId").textContent = d.id || "-";
+      document.getElementById("nominalView").textContent = rupiah(d.nominal);
+      document.getElementById("feeView").textContent = rupiah(d.fee);
 
-      const initialStatus = String(d.status || "pending").toLowerCase();
-      updateApiStatus(initialStatus);
-      setStatus(
-        initialStatus === "success" ? "success" : "",
-        initialStatus === "success"
-          ? "Pembayaran sudah berhasil! 🎉"
-          : "Menunggu pembayaran..."
-      );
+      // Total yang dibayar = nominal + fee.
+      const total = Number(d.nominal || 0) + Number(d.fee || 0);
+      document.getElementById("totalView").textContent = rupiah(total);
 
-      // Expired 15 menit seperti case buyqris.
-      expiredAt = Date.now() + (15 * 60 * 1000);
-      startCountdown();
+      // Saldo masuk = get_balance dari API.
+      document.getElementById("balanceView").textContent = rupiah(d.get_balance);
 
+      setStatus("pending", "Menunggu pembayaran...");
       showToast("QRIS berhasil dibuat!");
 
-      pollTimer = setInterval(() => {
-        checkStatus(false);
-      }, 10000);
+      // Polling status setiap 5 detik.
+      pollTimer = setInterval(checkStatus, 5000);
 
       window.scrollTo({
         top: document.getElementById("paymentCard").offsetTop - 15,
         behavior: "smooth"
       });
-
-      if (initialStatus === "success") {
-        clearInterval(pollTimer);
-        clearInterval(countdownTimer);
-      }
     } catch (err) {
-      console.error("[QRIS CREATE ERROR]", err);
+      console.error(err);
       showToast(err.message || "Gagal membuat QRIS.");
     } finally {
-      isProcessing = false;
       btn.disabled = false;
       btn.textContent = "Buat QRIS 🚀";
     }
   }
 
-  async function checkStatus(manual = false) {
-    if (!currentTransactionId) {
-      if (manual) showToast("Belum ada transaksi.");
-      return;
-    }
-
-    try {
-      // Persis pola case buyqris:
-      // status?id=ID_TRX&apikey=...
-      const result = await apiGet("status", {
-        id: currentTransactionId
-      });
-
-      console.log("[QRIS STATUS]", result);
-
-      const d = result?.data || {};
-      const status = String(d.status || "pending").toLowerCase();
-
-      updateApiStatus(status);
-
-      // Update nilai terbaru kalau API mengirimkannya.
-      if (d.nominal !== undefined) {
-        document.getElementById("nominalView").textContent = rupiah(d.nominal);
-      }
-
-      if (d.fee !== undefined) {
-        document.getElementById("feeView").textContent = rupiah(d.fee);
-      }
-
-      const currentNominal = Number(d.nominal ?? 0);
-      const currentFee = Number(d.fee ?? 0);
-
-      if (d.nominal !== undefined || d.fee !== undefined) {
-        document.getElementById("totalView").textContent =
-          rupiah(currentNominal + currentFee);
-      }
-
-      if (d.get_balance !== undefined) {
-        document.getElementById("balanceView").textContent =
-          rupiah(d.get_balance);
-      }
-
-      if (status === "success") {
-        clearInterval(pollTimer);
-        clearInterval(countdownTimer);
-
-        setStatus("success", "Pembayaran berhasil! 🎉");
-        showToast("Pembayaran berhasil!");
-
-        return;
-      }
-
-      if (["failed", "expired", "cancel", "cancelled", "canceled"].includes(status)) {
-        clearInterval(pollTimer);
-        clearInterval(countdownTimer);
-
-        setStatus(
-          "failed",
-          `Transaksi ${status.toUpperCase()}`
-        );
-
-        showToast(`Transaksi ${status}.`);
-        return;
-      }
-
-      setStatus("", "Menunggu pembayaran...");
-
-      if (manual) showToast("Belum dibayar. Status masih pending.");
-    } catch (err) {
-      console.error("[QRIS STATUS ERROR]", err);
-      if (manual) showToast(err.message || "Gagal mengecek status.");
-    }
-  }
-
-  async function checkFinalStatusOnExpired() {
+  async function checkStatus() {
     if (!currentTransactionId) return;
 
-    // Sama seperti case buyqris:
-    // saat waktu habis, cek status final sekali lagi sebelum cancel.
     try {
       const result = await apiGet("status", {
         id: currentTransactionId
       });
 
-      const finalStatus = String(
-        result?.data?.status || "pending"
-      ).toLowerCase();
+      const d = result.data || {};
+      const status = String(d.status || "").toLowerCase();
 
-      console.log("[QRIS FINAL STATUS]", result);
-
-      updateApiStatus(finalStatus);
-
-      if (finalStatus === "success") {
+      if (status === "success" || status === "paid" || status === "completed") {
         clearInterval(pollTimer);
         setStatus("success", "Pembayaran berhasil! 🎉");
-        showToast("Pembayaran berhasil.");
-        return;
-      }
 
-      if (
-        ["failed", "expired", "cancel", "cancelled", "canceled"].includes(finalStatus)
+        document.getElementById("nominalView").textContent = rupiah(d.nominal);
+        document.getElementById("feeView").textContent = rupiah(d.fee);
+
+        const total = Number(d.nominal || 0) + Number(d.fee || 0);
+        document.getElementById("totalView").textContent = rupiah(total);
+        document.getElementById("balanceView").textContent = rupiah(d.get_balance);
+
+        showToast("Pembayaran berhasil!");
+      } else if (
+        status === "cancelled" ||
+        status === "canceled" ||
+        status === "failed" ||
+        status === "expired"
       ) {
         clearInterval(pollTimer);
-        setStatus("failed", `Transaksi ${finalStatus.toUpperCase()}`);
-        showToast("Transaksi berakhir.");
-        return;
+        setStatus("failed", "Transaksi " + String(d.status).toUpperCase());
+        showToast("Transaksi tidak dapat dilanjutkan.");
+      } else {
+        setStatus("pending", "Menunggu pembayaran...");
       }
-
-      await cancelPayment(true);
     } catch (err) {
-      console.error("[QRIS EXPIRED CHECK ERROR]", err);
-      await cancelPayment(true);
+      console.error(err);
+      // Jangan langsung mengubah status menjadi gagal hanya karena
+      // satu request status error.
     }
   }
 
-  async function cancelPayment(auto = false) {
+  async function cancelPayment() {
     if (!currentTransactionId) return;
 
-    if (!auto) {
-      const yes = confirm("Yakin ingin membatalkan transaksi ini?");
-      if (!yes) return;
-    }
+    if (!confirm("Yakin ingin membatalkan transaksi ini?")) return;
 
     try {
-      // Sesuai endpoint case buyqris:
-      // cancel?id=ID_TRX&apikey=...
       const result = await apiGet("cancel", {
         id: currentTransactionId
       });
 
-      console.log("[QRIS CANCEL]", result);
-
       clearInterval(pollTimer);
-      clearInterval(countdownTimer);
-
-      const newStatus =
-        String(result?.data?.new_status || "CANCELLED").toLowerCase();
-
-      updateApiStatus(newStatus);
       setStatus("failed", "Transaksi dibatalkan");
-
-      if (!auto) showToast("Transaksi berhasil dibatalkan.");
+      showToast(result.message || "Transaksi berhasil dibatalkan.");
     } catch (err) {
-      console.error("[QRIS CANCEL ERROR]", err);
-
-      if (!auto) {
-        showToast(err.message || "Gagal membatalkan transaksi.");
-      }
+      console.error(err);
+      showToast(err.message || "Gagal membatalkan transaksi.");
     }
   }
 
