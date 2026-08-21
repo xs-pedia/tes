@@ -84,7 +84,7 @@
         <button id="createBtn" class="primary">🚀 Buat QRIS</button>
         <div id="statusBox" class="status"></div>
         <div id="loader" class="loader"></div>
-        <div class="mini">Metode otomatis: <b>QRISFAST</b></div>
+        <div class="mini">Metode otomatis: <b>QRIS</b></div>
       </div>
 
       <div class="card qrbox">
@@ -204,7 +204,7 @@
     setLoading(true);
 
     try{
-      const result = await api('/deposit/create', { nominal:String(Math.round(nominal)), metode:'QRISFAST' });
+      const result = await api('/deposit/create', { nominal:String(Math.round(nominal)), metode:'QRIS' });
       if(!result.success) throw new Error(result.message || 'Gagal membuat transaksi.');
       renderTransaction(result);
       startPolling();
