@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pembayaran QRIS • TopUp</title>
+  <style>
+    :root{
+      --ink:#171717;
+      --paper:#fffaf0;
+      --yellow:#ffd84d;
+      --red:#ff5b5b;
+      --blue:#68b6ff;
+      --green:#55cf89;
+      --shadow:7px 7px 0 var(--ink);
+      --radius:22px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;min-height:100vh;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      color:var(--ink);background:
+      radial-gradient(circle at 15% 15%, rgba(255,216,77,.7) 0 55px, transparent 56px),
+      radial-gradient(circle at 85% 20%, rgba(104,182,255,.6) 0 75px, transparent 76px),
+      linear-gradient(135deg,#fffaf0,#fff2dd);
+      overflow-x:hidden;
+    }
+    body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.25;background-image:radial-gradient(#171717 1px,transparent 1px);background-size:17px 17px;mix-blend-mode:multiply}
+    .wrap{width:min(1060px,92%);margin:0 auto;padding:48px 0 60px;position:relative;z-index:1}
+    .top{text-align:center;margin-bottom:26px}
+    .badge{display:inline-block;background:#fff;border:4px solid var(--ink);box-shadow:5px 5px 0 var(--ink);padding:8px 15px;border-radius:999px;font-weight:900;transform:rotate(-2deg);margin-bottom:14px}
+    h1{font-size:clamp(34px,6vw,64px);line-height:.95;margin:0 0 12px;font-weight:1000;letter-spacing:-2px;text-shadow:3px 3px 0 #fff}
+    .subtitle{max-width:650px;margin:auto;font-weight:700;font-size:16px;opacity:.78}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+    .card{background:rgba(255,255,255,.92);border:4px solid var(--ink);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px}
+    .card.tilt{transform:rotate(.6deg)}
+    .card h2{font-size:24px;margin:0 0 18px;font-weight:1000}
+    label{display:block;font-weight:900;margin:0 0 8px}
+    .input-wrap{position:relative}
+    .prefix{position:absolute;left:15px;top:50%;transform:translateY(-50%);font-weight:1000;font-size:19px}
+    input{width:100%;border:4px solid var(--ink);border-radius:16px;padding:15px 15px 15px 58px;font-size:22px;font-weight:900;outline:none;background:#fff;box-shadow:inset 0 -3px 0 rgba(0,0,0,.08)}
+    input:focus{box-shadow:0 0 0 4px rgba(104,182,255,.35),inset 0 -3px 0 rgba(0,0,0,.08)}
+    button{width:100%;border:4px solid var(--ink);border-radius:16px;padding:15px 18px;margin-top:14px;font-size:17px;font-weight:1000;cursor:pointer;box-shadow:5px 5px 0 var(--ink);transition:transform .12s,box-shadow .12s}
+    button:active{transform:translate(3px,3px);box-shadow:2px 2px 0 var(--ink)}
+    .primary{background:var(--yellow)}
+    .secondary{background:var(--blue)}
+    .danger{background:var(--red)}
+    button:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:4px 4px 0 #777}
+    .mini{margin-top:12px;font-size:13px;font-weight:700;opacity:.72}
+    .status{margin-top:14px;padding:13px 15px;border:3px dashed var(--ink);border-radius:14px;background:#fffef9;font-weight:900;display:none}
+    .status.show{display:block}
+    .qrbox{min-height:450px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+    .comic-burst{font-weight:1000;background:var(--red);color:#fff;border:4px solid var(--ink);padding:8px 14px;display:inline-block;transform:rotate(4deg);clip-path:polygon(50% 0%,61% 10%,75% 3%,81% 18%,97% 19%,90% 34%,100% 46%,87% 55%,96% 69%,80% 73%,77% 91%,61% 87%,50% 100%,39% 88%,22% 96%,20% 78%,4% 74%,12% 58%,0 48%,13% 36%,4% 21%,20% 19%,25% 4%,39% 11%)}
+    .qr{width:min(330px,82%);aspect-ratio:1;border:4px solid var(--ink);border-radius:18px;object-fit:contain;background:white;padding:10px;box-shadow:6px 6px 0 var(--ink);display:none}
+    .empty{max-width:320px;font-weight:800;opacity:.62}
+    .amount{font-size:34px;font-weight:1000;margin:13px 0 4px;display:none}
+    .meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:390px;margin-top:16px}
+    .meta div{border:3px solid var(--ink);border-radius:14px;padding:10px;background:#fff;text-align:left}
+    .meta span{display:block;font-size:11px;font-weight:800;opacity:.6;text-transform:uppercase}.meta b{font-size:15px}
+    .actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:390px;margin-top:13px;display:none}
+    .actions button{margin:0}
+    .ok{color:#08763d}.wait{color:#985400}.cancelled{color:#a52222}
+    .loader{width:26px;height:26px;border:4px solid #ddd;border-top-color:var(--ink);border-radius:50%;animation:spin .8s linear infinite;display:none;margin:12px auto}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .footer{text-align:center;margin-top:28px;font-size:12px;font-weight:800;opacity:.6}
+    @media(max-width:800px){.grid{grid-template-columns:1fr}.qrbox{min-height:360px}.card.tilt{transform:none}}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="top">
+      <div class="badge">⚡ TOP UP • QRIS FAST</div>
+      <h1>Bayar. Scan. Beres! 💥</h1>
+      <p class="subtitle">Masukkan nominal, buat QRIS, lalu scan menggunakan aplikasi pembayaran kamu.</p>
+    </header>
+
+    <section class="grid">
+      <div class="card tilt">
+        <h2>💰 Isi Nominal</h2>
+        <label for="nominal">Nominal pembayaran</label>
+        <div class="input-wrap">
+          <span class="prefix">Rp</span>
+          <input id="nominal" type="number" min="1" step="1" placeholder="25000" inputmode="numeric" />
+        </div>
+        <button id="createBtn" class="primary">🚀 Buat QRIS</button>
+        <div id="statusBox" class="status"></div>
+        <div id="loader" class="loader"></div>
+        <div class="mini">Metode otomatis: <b>QRISFAST</b></div>
+      </div>
+
+      <div class="card qrbox">
+        <div id="burst" class="comic-burst">SCAN ME! ⚡</div>
+        <img id="qrImage" class="qr" alt="QRIS Pembayaran" />
+        <div id="emptyText" class="empty">QRIS akan muncul di sini setelah transaksi berhasil dibuat.</div>
+        <div id="amountText" class="amount"></div>
+        <div class="meta" id="metaBox" style="display:none">
+          <div><span>ID Transaksi</span><b id="trxId">-</b></div>
+          <div><span>Status</span><b id="trxStatus">pending</b></div>
+          <div><span>Fee</span><b id="fee">-</b></div>
+          <div><span>Diterima</span><b id="getBalance">-</b></div>
+        </div>
+        <div class="actions" id="actions">
+          <button id="checkBtn" class="secondary">🔄 Cek Status</button>
+          <button id="cancelBtn" class="danger">✖ Batalkan</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer">Pembayaran diproses melalui API H2H • Jangan tutup halaman sebelum pembayaran selesai.</div>
+  </main>
+
+<script>
+  // Catatan: API key di frontend dapat dilihat pengguna melalui DevTools.
+  // Untuk produksi, sebaiknya request API dipindahkan ke backend/proxy milik Anda.
+  const API_BASE = 'https://xs-pedia.my.id/h2h';
+  const API_KEY = 'Ryuu_TopUpqgypptaqywttpp7l';
+
+  const nominalInput = document.getElementById('nominal');
+  const createBtn = document.getElementById('createBtn');
+  const checkBtn = document.getElementById('checkBtn');
+  const cancelBtn = document.getElementById('cancelBtn');
+  const statusBox = document.getElementById('statusBox');
+  const loader = document.getElementById('loader');
+  const qrImage = document.getElementById('qrImage');
+  const emptyText = document.getElementById('emptyText');
+  const burst = document.getElementById('burst');
+  const amountText = document.getElementById('amountText');
+  const metaBox = document.getElementById('metaBox');
+  const actions = document.getElementById('actions');
+
+  let currentTrxId = null;
+  let pollTimer = null;
+
+  function rupiah(n){
+    return new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n||0));
+  }
+
+  function setLoading(loading){
+    createBtn.disabled = loading;
+    loader.style.display = loading ? 'block' : 'none';
+  }
+
+  function showStatus(text, type='wait'){
+    statusBox.className = 'status show ' + type;
+    statusBox.textContent = text;
+  }
+
+  function clearStatus(){
+    statusBox.className = 'status';
+    statusBox.textContent = '';
+  }
+
+  async function api(path, params={}){
+    const qs = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE}${path}?${qs}`, {
+      method:'GET',
+      headers:{
+        'X-APIKEY':API_KEY,
+        'Content-Type':'application/json'
+      }
+    });
+    let data;
+    try{ data = await res.json(); }catch{ throw new Error('Respons API bukan JSON.'); }
+    if(!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
+    return data;
+  }
+
+  function renderTransaction(data){
+    const d = data.data || data;
+    currentTrxId = d.id || d.trx_id || currentTrxId;
+
+    if(d.qr_image){
+      qrImage.src = d.qr_image;
+      qrImage.style.display='block';
+      emptyText.style.display='none';
+      burst.style.display='inline-block';
+    }
+    amountText.textContent = rupiah(d.nominal);
+    amountText.style.display='block';
+    document.getElementById('trxId').textContent = currentTrxId || '-';
+    document.getElementById('trxStatus').textContent = d.status || '-';
+    document.getElementById('fee').textContent = d.fee != null ? rupiah(d.fee) : '-';
+    document.getElementById('getBalance').textContent = d.get_balance != null ? rupiah(d.get_balance) : '-';
+    metaBox.style.display='grid';
+    actions.style.display='grid';
+    showStatus('⏳ Menunggu pembayaran...', 'wait');
+  }
+
+  async function createDeposit(){
+    const nominal = Number(nominalInput.value);
+    if(!Number.isFinite(nominal) || nominal <= 0){
+      showStatus('Masukkan nominal yang valid.', 'cancelled');
+      nominalInput.focus();
+      return;
+    }
+
+    if(pollTimer) clearInterval(pollTimer);
+    currentTrxId = null;
+    qrImage.style.display='none';
+    emptyText.style.display='block';
+    amountText.style.display='none';
+    metaBox.style.display='none';
+    actions.style.display='none';
+    clearStatus();
+    setLoading(true);
+
+    try{
+      const result = await api('/deposit/create', { nominal:String(Math.round(nominal)), metode:'QRISFAST' });
+      if(!result.success) throw new Error(result.message || 'Gagal membuat transaksi.');
+      renderTransaction(result);
+      startPolling();
+    }catch(err){
+      showStatus('❌ ' + err.message, 'cancelled');
+    }finally{
+      setLoading(false);
+    }
+  }
+
+  async function checkStatus(silent=false){
+    if(!currentTrxId) return;
+    try{
+      const result = await api('/deposit/status', {id:currentTrxId});
+      if(!result.success) throw new Error(result.message || 'Gagal mengecek status.');
+      const d = result.data || {};
+      document.getElementById('trxStatus').textContent = d.status || '-';
+      document.getElementById('fee').textContent = d.fee != null ? rupiah(d.fee) : '-';
+      document.getElementById('getBalance').textContent = d.get_balance != null ? rupiah(d.get_balance) : '-';
+
+      if(d.status === 'success'){
+        showStatus('✅ Pembayaran berhasil! Saldo sudah diterima.', 'ok');
+        if(pollTimer) clearInterval(pollTimer);
+        checkBtn.disabled = false;
+        cancelBtn.disabled = true;
+      }else if(d.status === 'cancelled' || d.status === 'CANCELLED'){
+        showStatus('✖ Transaksi dibatalkan.', 'cancelled');
+        if(pollTimer) clearInterval(pollTimer);
+        cancelBtn.disabled = true;
+      }else if(!silent){
+        showStatus('⏳ Pembayaran masih menunggu...', 'wait');
+      }
+    }catch(err){
+      if(!silent) showStatus('❌ ' + err.message, 'cancelled');
+    }
+  }
+
+  function startPolling(){
+    if(pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(() => checkStatus(true), 4000);
+  }
+
+  async function cancelTransaction(){
+    if(!currentTrxId) return;
+    if(!confirm('Yakin ingin membatalkan transaksi ini?')) return;
+    cancelBtn.disabled=true;
+    try{
+      const result = await api('/deposit/cancel', {id:currentTrxId});
+      if(result.status !== 'success') throw new Error(result.message || 'Gagal membatalkan transaksi.');
+      if(pollTimer) clearInterval(pollTimer);
+      document.getElementById('trxStatus').textContent = result.data?.new_status || 'CANCELLED';
+      showStatus('✖ Transaksi berhasil dibatalkan.', 'cancelled');
+    }catch(err){
+      cancelBtn.disabled=false;
+      showStatus('❌ ' + err.message, 'cancelled');
+    }
+  }
+
+  createBtn.addEventListener('click', createDeposit);
+  checkBtn.addEventListener('click', () => checkStatus(false));
+  cancelBtn.addEventListener('click', cancelTransaction);
+  nominalInput.addEventListener('keydown', e => { if(e.key === 'Enter') createDeposit(); });
+</script>
+</body>
+</html>
