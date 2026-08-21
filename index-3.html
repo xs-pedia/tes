@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QRIS Payment • Smooth Comic</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap');
+
+    :root{
+      --ink:#191522;
+      --purple:#7c3aed;
+      --purple2:#a855f7;
+      --pink:#f472b6;
+      --yellow:#ffd84d;
+      --paper:#fffdf8;
+      --green:#22c55e;
+      --red:#ef4444;
+      --orange:#f59e0b;
+      --shadow:7px 7px 0 var(--ink);
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      color:var(--ink);
+      font-family:"Nunito",sans-serif;
+      background:
+        radial-gradient(circle at 10% 15%, #f9a8d4 0 55px, transparent 56px),
+        radial-gradient(circle at 90% 10%, #c4b5fd 0 75px, transparent 76px),
+        radial-gradient(circle at 85% 90%, #fde68a 0 80px, transparent 81px),
+        #f4efff;
+      overflow-x:hidden;
+    }
+
+    .dots{
+      position:fixed; inset:0; pointer-events:none; opacity:.16;
+      background-image:radial-gradient(var(--ink) 1px, transparent 1px);
+      background-size:18px 18px;
+    }
+
+    .wrap{width:min(940px,92%); margin:0 auto; padding:34px 0 50px; position:relative}
+    .hero{text-align:center; margin-bottom:24px}
+    .badge{
+      display:inline-block; background:var(--yellow); border:3px solid var(--ink);
+      border-radius:999px; padding:7px 16px; font-weight:900;
+      box-shadow:4px 4px 0 var(--ink); transform:rotate(-2deg);
+    }
+    h1{
+      font-family:"Baloo 2",cursive; font-size:clamp(42px,8vw,76px);
+      line-height:.9; margin:18px 0 10px; letter-spacing:-2px;
+      text-shadow:4px 4px 0 #fff;
+    }
+    .hero p{font-weight:700; opacity:.75; margin:0}
+
+    .card{
+      background:var(--paper); border:4px solid var(--ink); border-radius:28px;
+      box-shadow:var(--shadow); padding:26px; margin-top:24px;
+    }
+
+    label{display:block; font-weight:900; margin-bottom:8px; font-size:15px}
+    .input-row{display:flex; gap:12px}
+    input{
+      width:100%; border:3px solid var(--ink); border-radius:16px;
+      padding:15px 17px; font:800 18px "Nunito",sans-serif; outline:none;
+      background:white; box-shadow:inset 0 -3px 0 #e8e3ee;
+    }
+    input:focus{box-shadow:0 0 0 4px #ddd6fe}
+    button{
+      border:3px solid var(--ink); border-radius:16px; padding:13px 20px;
+      font:900 16px "Nunito",sans-serif; cursor:pointer; transition:.16s;
+      box-shadow:4px 4px 0 var(--ink); background:var(--purple); color:#fff;
+      white-space:nowrap;
+    }
+    button:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--ink)}
+    button:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
+    button.secondary{background:#fff;color:var(--ink)}
+    button.danger{background:var(--red);color:#fff}
+    button:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+    .hidden{display:none!important}
+    .payment-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+    .qr-box{
+      text-align:center; background:#fff; border:3px dashed var(--ink);
+      border-radius:22px; padding:18px; position:relative;
+    }
+    .qr-box img{
+      width:min(100%,340px); aspect-ratio:1; object-fit:contain;
+      border:4px solid var(--ink); border-radius:14px; background:#fff;
+    }
+    .sticker{
+      position:absolute; top:-15px; right:-10px; background:var(--pink);
+      border:3px solid var(--ink); border-radius:12px; padding:6px 11px;
+      font-weight:900; transform:rotate(6deg); box-shadow:3px 3px 0 var(--ink);
+      z-index:2;
+    }
+
+    .summary{display:grid;gap:12px}
+    .line{
+      display:flex;justify-content:space-between;gap:16px;padding:12px 0;
+      border-bottom:2px dashed #d8d2df;font-weight:800;
+    }
+    .line:last-child{border-bottom:0}
+    .line.total{font-size:21px}
+    .value{font-weight:900;text-align:right}
+    .note{
+      background:#ede9fe;border:3px solid var(--ink);border-radius:15px;
+      padding:13px;font-size:13px;font-weight:700;margin-top:8px;
+    }
+
+    .status{
+      display:flex;align-items:center;gap:10px;justify-content:center;
+      border:3px solid var(--ink);border-radius:14px;padding:11px;
+      font-weight:900;background:#fef3c7;margin-bottom:15px;
+    }
+    .dot{width:13px;height:13px;border-radius:50%;background:var(--orange);border:2px solid var(--ink)}
+    .status.success{background:#dcfce7}.status.success .dot{background:var(--green)}
+    .status.failed{background:#fee2e2}.status.failed .dot{background:var(--red)}
+
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}
+    .actions button{flex:1;min-width:150px}
+
+    .loader{
+      width:22px;height:22px;border:4px solid #ddd6fe;border-top-color:var(--purple);
+      border-radius:50%;animation:spin .7s linear infinite;display:inline-block;
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    .toast{
+      position:fixed;left:50%;bottom:22px;transform:translate(-50%,120px);
+      background:var(--ink);color:#fff;padding:13px 18px;border-radius:14px;
+      border:3px solid #fff;box-shadow:5px 5px 0 var(--purple);
+      font-weight:800;transition:.25s;z-index:10;max-width:90%;text-align:center;
+    }
+    .toast.show{transform:translate(-50%,0)}
+
+    .comic{
+      font-family:"Baloo 2",cursive;font-size:25px;font-weight:900;
+      margin:0 0 15px;
+    }
+
+    .countdown{
+      margin-top:12px;
+      display:inline-block;
+      background:#fff7ed;
+      border:3px solid var(--ink);
+      border-radius:12px;
+      padding:7px 11px;
+      font-weight:900;
+    }
+
+    .footer{text-align:center;font-size:12px;font-weight:800;opacity:.55;margin-top:30px}
+
+    @media(max-width:720px){
+      .payment-grid{grid-template-columns:1fr}
+      .card{padding:18px}
+      .input-row{flex-direction:column}
+      button{width:100%}
+    }
+  </style>
+</head>
+<body>
+<div class="dots"></div>
+
+<main class="wrap">
+  <section class="hero">
+    <span class="badge">⚡ QRIS FAST PAYMENT</span>
+    <h1>Bayar QRIS!</h1>
+    <p>Masukkan nominal → buat QRIS → scan → status dicek otomatis.</p>
+  </section>
+
+  <section class="card">
+    <h2 class="comic">💸 Mau bayar berapa?</h2>
+    <label for="nominal">Nominal produk (Rp)</label>
+    <div class="input-row">
+      <input id="nominal" type="number" min="1" step="1" placeholder="Contoh: 25000" />
+      <button id="createBtn" onclick="createPayment()">Buat QRIS 🚀</button>
+    </div>
+  </section>
+
+  <section id="paymentCard" class="card hidden">
+    <div class="payment-grid">
+      <div class="qr-box">
+        <span class="sticker">SCAN ME!</span>
+
+        <div id="status" class="status">
+          <span class="dot"></span>
+          <span id="statusText">Menunggu pembayaran...</span>
+        </div>
+
+        <img id="qrImage" alt="QRIS Pembayaran" />
+
+        <div class="countdown">
+          ⏰ Sisa waktu: <span id="countdown">15:00</span>
+        </div>
+
+        <p style="font-weight:900;margin-bottom:0">
+          Scan QRIS dengan aplikasi pembayaran kamu.
+        </p>
+      </div>
+
+      <div class="summary">
+        <h2 class="comic">🧾 Detail transaksi</h2>
+
+        <div class="line">
+          <span>ID Transaksi</span>
+          <span id="trxId" class="value">-</span>
+        </div>
+
+        <div class="line">
+          <span>Nominal Produk</span>
+          <span id="nominalView" class="value">-</span>
+        </div>
+
+        <div class="line">
+          <span>Fee/Admin</span>
+          <span id="feeView" class="value">-</span>
+        </div>
+
+        <div class="line total">
+          <span>Total Bayar</span>
+          <span id="totalView" class="value">-</span>
+        </div>
+
+        <div class="line">
+          <span>Saldo Diterima</span>
+          <span id="balanceView" class="value">-</span>
+        </div>
+
+        <div class="line">
+          <span>Status API</span>
+          <span id="apiStatusView" class="value">pending</span>
+        </div>
+
+        <div class="note">
+          ℹ️ Create memakai endpoint XS-PEDIA <b>deposit/create</b> dengan
+          <b>metode=QRIS</b>. Pemeriksaan pembayaran memakai
+          <b>deposit/status?id=...</b>. Nilai QR dan transaksi mengikuti
+          response API.
+        </div>
+
+        <div class="actions">
+          <button class="secondary" onclick="checkStatus(true)">🔄 Cek Status</button>
+          <button class="danger" onclick="cancelPayment()">✕ Batalkan</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="footer">Smooth Comic Payment UI • XS-PEDIA QRIS</div>
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script>
+  // API key sengaja ditanam langsung sesuai permintaan.
+  const API_KEY = "Ryuu_TopUpqgypptaqywttpp7l";
+  const API_BASE = "https://xs-pedia.my.id/h2h/deposit";
+
+  let currentTransactionId = null;
+  let pollTimer = null;
+  let countdownTimer = null;
+  let expiredAt = 0;
+  let isProcessing = false;
+
+  const rupiah = (n) =>
+    new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      maximumFractionDigits: 0
+    }).format(Number(n || 0));
+
+  function showToast(message) {
+    const el = document.getElementById("toast");
+    el.textContent = message;
+    el.classList.add("show");
+    clearTimeout(showToast.timer);
+    showToast.timer = setTimeout(() => el.classList.remove("show"), 3200);
+  }
+
+  function setStatus(type, text) {
+    const box = document.getElementById("status");
+    box.className = "status " + (type || "");
+    document.getElementById("statusText").textContent = text;
+  }
+
+  function updateApiStatus(status) {
+    document.getElementById("apiStatusView").textContent = status || "-";
+  }
+
+  async function apiGet(path, params) {
+    const qs = new URLSearchParams(params);
+
+    // Mengikuti pola API pada case buyqris:
+    // api key dikirim lewat query dan header.
+    const url = `${API_BASE}/${path}?${qs.toString()}&apikey=${encodeURIComponent(API_KEY)}`;
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "X-APIKEY": API_KEY,
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    });
+
+    const raw = await response.text();
+
+    let data;
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      throw new Error("Response XS-PEDIA tidak valid.");
+    }
+
+    if (!response.ok) {
+      throw new Error(data?.message || `HTTP ${response.status}`);
+    }
+
+    if (data?.success === false) {
+      throw new Error(data?.message || "Request XS-PEDIA gagal.");
+    }
+
+    return data;
+  }
+
+  function startCountdown() {
+    clearInterval(countdownTimer);
+
+    const el = document.getElementById("countdown");
+
+    function render() {
+      const remaining = Math.max(0, expiredAt - Date.now());
+      const totalSeconds = Math.floor(remaining / 1000);
+
+      const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
+      const seconds = String(totalSeconds % 60).padStart(2, "0");
+
+      el.textContent = `${minutes}:${seconds}`;
+
+      if (remaining <= 0) {
+        clearInterval(countdownTimer);
+        checkFinalStatusOnExpired();
+      }
+    }
+
+    render();
+    countdownTimer = setInterval(render, 1000);
+  }
+
+  async function createPayment() {
+    const nominalInput = document.getElementById("nominal");
+    const btn = document.getElementById("createBtn");
+
+    const nominal = Number(nominalInput.value);
+
+    if (!Number.isFinite(nominal) || nominal <= 0) {
+      showToast("Masukkan nominal yang benar.");
+      return;
+    }
+
+    if (isProcessing) return;
+
+    isProcessing = true;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loader"></span>';
+
+    try {
+      clearInterval(pollTimer);
+      clearInterval(countdownTimer);
+      currentTransactionId = null;
+
+      // Sesuai case buyqris:
+      // create?nominal=harga&metode=QRIS&apikey=...
+      const result = await apiGet("create", {
+        nominal: String(Math.round(nominal)),
+        metode: "QRIS"
+      });
+
+      console.log("[QRIS CREATE]", result);
+
+      if (!result?.success) {
+        throw new Error(result?.message || "Gagal membuat QRIS.");
+      }
+
+      const d = result?.data;
+
+      if (!d) {
+        throw new Error("Data QRIS XS-PEDIA tidak ditemukan.");
+      }
+
+      const xiaoId = d.id || d.iddepo;
+      const qrUrl = d.qr_image || d.qr_image_url;
+
+      if (!xiaoId) {
+        throw new Error("ID transaksi XS-PEDIA tidak ditemukan.");
+      }
+
+      if (!qrUrl) {
+        throw new Error("QRIS image tidak tersedia dari response API.");
+      }
+
+      currentTransactionId = xiaoId;
+
+      // Pada API yang kamu kirim:
+      // nominal = nominal transaksi
+      // fee = biaya
+      // get_balance = saldo bersih yang diterima
+      const nominalApi = Number(d.nominal ?? nominal);
+      const fee = Number(d.fee ?? 0);
+      const totalBayar = nominalApi + fee;
+      const getBalance = Number(
+        d.get_balance ?? Math.max(0, totalBayar - fee)
+      );
+
+      document.getElementById("paymentCard").classList.remove("hidden");
+      document.getElementById("qrImage").src = qrUrl;
+      document.getElementById("trxId").textContent = xiaoId;
+      document.getElementById("nominalView").textContent = rupiah(nominalApi);
+      document.getElementById("feeView").textContent = rupiah(fee);
+      document.getElementById("totalView").textContent = rupiah(totalBayar);
+      document.getElementById("balanceView").textContent = rupiah(getBalance);
+
+      const initialStatus = String(d.status || "pending").toLowerCase();
+      updateApiStatus(initialStatus);
+      setStatus(
+        initialStatus === "success" ? "success" : "",
+        initialStatus === "success"
+          ? "Pembayaran sudah berhasil! 🎉"
+          : "Menunggu pembayaran..."
+      );
+
+      // Expired 15 menit seperti case buyqris.
+      expiredAt = Date.now() + (15 * 60 * 1000);
+      startCountdown();
+
+      showToast("QRIS berhasil dibuat!");
+
+      pollTimer = setInterval(() => {
+        checkStatus(false);
+      }, 10000);
+
+      window.scrollTo({
+        top: document.getElementById("paymentCard").offsetTop - 15,
+        behavior: "smooth"
+      });
+
+      if (initialStatus === "success") {
+        clearInterval(pollTimer);
+        clearInterval(countdownTimer);
+      }
+    } catch (err) {
+      console.error("[QRIS CREATE ERROR]", err);
+      showToast(err.message || "Gagal membuat QRIS.");
+    } finally {
+      isProcessing = false;
+      btn.disabled = false;
+      btn.textContent = "Buat QRIS 🚀";
+    }
+  }
+
+  async function checkStatus(manual = false) {
+    if (!currentTransactionId) {
+      if (manual) showToast("Belum ada transaksi.");
+      return;
+    }
+
+    try {
+      // Persis pola case buyqris:
+      // status?id=ID_TRX&apikey=...
+      const result = await apiGet("status", {
+        id: currentTransactionId
+      });
+
+      console.log("[QRIS STATUS]", result);
+
+      const d = result?.data || {};
+      const status = String(d.status || "pending").toLowerCase();
+
+      updateApiStatus(status);
+
+      // Update nilai terbaru kalau API mengirimkannya.
+      if (d.nominal !== undefined) {
+        document.getElementById("nominalView").textContent = rupiah(d.nominal);
+      }
+
+      if (d.fee !== undefined) {
+        document.getElementById("feeView").textContent = rupiah(d.fee);
+      }
+
+      const currentNominal = Number(d.nominal ?? 0);
+      const currentFee = Number(d.fee ?? 0);
+
+      if (d.nominal !== undefined || d.fee !== undefined) {
+        document.getElementById("totalView").textContent =
+          rupiah(currentNominal + currentFee);
+      }
+
+      if (d.get_balance !== undefined) {
+        document.getElementById("balanceView").textContent =
+          rupiah(d.get_balance);
+      }
+
+      if (status === "success") {
+        clearInterval(pollTimer);
+        clearInterval(countdownTimer);
+
+        setStatus("success", "Pembayaran berhasil! 🎉");
+        showToast("Pembayaran berhasil!");
+
+        return;
+      }
+
+      if (["failed", "expired", "cancel", "cancelled", "canceled"].includes(status)) {
+        clearInterval(pollTimer);
+        clearInterval(countdownTimer);
+
+        setStatus(
+          "failed",
+          `Transaksi ${status.toUpperCase()}`
+        );
+
+        showToast(`Transaksi ${status}.`);
+        return;
+      }
+
+      setStatus("", "Menunggu pembayaran...");
+
+      if (manual) showToast("Belum dibayar. Status masih pending.");
+    } catch (err) {
+      console.error("[QRIS STATUS ERROR]", err);
+      if (manual) showToast(err.message || "Gagal mengecek status.");
+    }
+  }
+
+  async function checkFinalStatusOnExpired() {
+    if (!currentTransactionId) return;
+
+    // Sama seperti case buyqris:
+    // saat waktu habis, cek status final sekali lagi sebelum cancel.
+    try {
+      const result = await apiGet("status", {
+        id: currentTransactionId
+      });
+
+      const finalStatus = String(
+        result?.data?.status || "pending"
+      ).toLowerCase();
+
+      console.log("[QRIS FINAL STATUS]", result);
+
+      updateApiStatus(finalStatus);
+
+      if (finalStatus === "success") {
+        clearInterval(pollTimer);
+        setStatus("success", "Pembayaran berhasil! 🎉");
+        showToast("Pembayaran berhasil.");
+        return;
+      }
+
+      if (
+        ["failed", "expired", "cancel", "cancelled", "canceled"].includes(finalStatus)
+      ) {
+        clearInterval(pollTimer);
+        setStatus("failed", `Transaksi ${finalStatus.toUpperCase()}`);
+        showToast("Transaksi berakhir.");
+        return;
+      }
+
+      await cancelPayment(true);
+    } catch (err) {
+      console.error("[QRIS EXPIRED CHECK ERROR]", err);
+      await cancelPayment(true);
+    }
+  }
+
+  async function cancelPayment(auto = false) {
+    if (!currentTransactionId) return;
+
+    if (!auto) {
+      const yes = confirm("Yakin ingin membatalkan transaksi ini?");
+      if (!yes) return;
+    }
+
+    try {
+      // Sesuai endpoint case buyqris:
+      // cancel?id=ID_TRX&apikey=...
+      const result = await apiGet("cancel", {
+        id: currentTransactionId
+      });
+
+      console.log("[QRIS CANCEL]", result);
+
+      clearInterval(pollTimer);
+      clearInterval(countdownTimer);
+
+      const newStatus =
+        String(result?.data?.new_status || "CANCELLED").toLowerCase();
+
+      updateApiStatus(newStatus);
+      setStatus("failed", "Transaksi dibatalkan");
+
+      if (!auto) showToast("Transaksi berhasil dibatalkan.");
+    } catch (err) {
+      console.error("[QRIS CANCEL ERROR]", err);
+
+      if (!auto) {
+        showToast(err.message || "Gagal membatalkan transaksi.");
+      }
+    }
+  }
+
+  document.getElementById("nominal").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") createPayment();
+  });
+</script>
+</body>
+</html>
